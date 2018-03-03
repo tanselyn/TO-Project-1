@@ -1,7 +1,12 @@
 ---
 title: "Project1"
 output: html_document
+author: "Hannah Wang, Gary Yeung, Jackson Irwin, Ryan Moonka"
 ---
+
+```{}
+Goal 1: Understand the data
+```
 
 ```{r}
 #importing data. CAUTION this takes a LONG time
@@ -26,5 +31,22 @@ citiBike_Jan_Sep <- as.data.frame(rbind(Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep))
 #final result should have 10262649 obs. of 15 variables
 #compilation takes about 15 minutes
 
+```
+
+
+```{}
+Goal 2: Identify patterns in the ride history data
+```
+
+
+
+```{}
+Goal 3: Assymetric Traffic
+```
+
+
+
+```{}
+Goal 4: Impact of Weather
 ```
 
