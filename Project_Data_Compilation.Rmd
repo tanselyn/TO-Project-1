@@ -71,10 +71,28 @@ snowD_plot
 snowF_plot <- ggplot(data=weather_data, aes(x=DATE, y=SNOW), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.1) + xlab("Date") + ylab("Snowfall") + ggtitle("Amount of snowfall from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
 snowF_plot
 
-precip_plot <- ggplot(data=weather_data, aes(x=DATE, y=PRCP), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.3) + xlab("Date") + ylab("Precipitation") + ggtitle("Amount of precipitation from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
-precip_plot
+temp_plot <- ggplot(data=weather_data, aes(x=DATE)) + geom_smooth(aes(y=TMAX, colour="max temperature"), span = 0.4) + geom_smooth(aes(y=TMIN, colour="min temperature"), span = 0.4) + scale_color_manual("", breaks=c("max temperature","min temperature"), values=c("red","blue"))+ xlab("Date") + ylab("Temperature") + ggtitle("Max Temperature vs. Min Temperature from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+temp_plot
 
-
+wind_plot <- ggplot(data=weather_data, aes(x=DATE, y=AWND), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.1) + xlab("Date") + ylab("Wind Speed") + ggtitle("Average wind speed from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+wind_plot
 
 ```
+
+```{}
+A few initial observations based on this initial analysis: 
+1. It may be more useful to combine the min and max temperature data to calculate an average temperature value and use this average in our analysis.
+2. Wind speed data appears to have several unexplained outliers. While most data points are small positive numbers, there are some values of -9999. We're making the assumption that these are invalid data points. We will replace these data points with the mean average wind speed.
+
+A re-visualization of wind speed is below:
+```
+
+```{r}
+weather_data$AWND[weather_data$AWND < 0] = NA
+weather_data$AWND[is.na(weather_data$AWND)] = mean(weather_data$AWND, na.rm=TRUE)
+wind_plot <- ggplot(data=weather_data, aes(x=DATE, y=AWND), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.1) + xlab("Date") + ylab("Wind Speed") + ggtitle("Average wind speed from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+wind_plot
+```
+
+
 
