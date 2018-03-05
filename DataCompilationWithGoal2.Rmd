@@ -74,10 +74,25 @@ qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freqweekdayend, aes
 
 
 
-```{}
-Goal 3: Assymetric Traffic
-```
+```{r}
+#Goal 3: Assymetric Traffic
+# Install the jsonlite library
+library(jsonlite)
 
+data = fromJSON("http://api-core.citibikenyc.com/gbfs/en/station_status.json")
+data2 = fromJSON("http://api-core.citibikenyc.com/gbfs/en/station_information.json")
+
+# You'll only want to work with a certain part of this data.
+statusDF = data$data[1]$stations
+infoDF = data2$data$stations
+
+citiBike_Jan_Sep$startHours = as.POSIXlt(citiBike_Jan_Sep$starttime, format = "%m/%d/%Y %H:%M")$hour
+citiBike_Jan_Sep$stopHours = as.POSIXlt(citiBike_Jan_Sep$stoptime, format = "%m/%d/%Y %H:%M")$hour
+sort(table(subset(citiBike_Jan_Sep$start.station.name, citiBike_Jan_Sep$startHours >=9 & citiBike_Jan_Sep$startHours <=10))/2/274, decreasing=T)[1:10]
+sort(table(subset(citiBike_Jan_Sep$end.station.name, citiBike_Jan_Sep$stopHours >=9 & citiBike_Jan_Sep$stopHours <=10))/2/274, decreasing=T)[1:10]
+sort(table(subset(citiBike_Jan_Sep$start.station.name, citiBike_Jan_Sep$startHours >=17 & citiBike_Jan_Sep$startHours <=18))/2/274, decreasing=T)[1:10]
+sort(table(subset(citiBike_Jan_Sep$end.station.name, citiBike_Jan_Sep$stopHours >=17 & citiBike_Jan_Sep$stopHours <=18))/2/274, decreasing=T)[1:10]
+```
 
 
 ```{}
