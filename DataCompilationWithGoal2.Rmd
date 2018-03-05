@@ -1,0 +1,132 @@
+---
+title: "Project1"
+output: html_document
+author: "Hannah Wang, Gary Yeung, Jackson Irwin, Ryan Moonka"
+---
+
+```{}
+Goal 1: Understand the data
+```
+
+```{r}
+#importing data. CAUTION this takes a LONG time
+
+Jan <- read.csv("201601-citibike-tripdata.csv")
+Feb <- read.csv("201602-citibike-tripdata.csv")
+Mar <- read.csv("201603-citibike-tripdata.csv")
+Apr <- read.csv("201604-citibike-tripdata.csv")
+May <- read.csv("201605-citibike-tripdata.csv")
+Jun <- read.csv("201606-citibike-tripdata.csv")
+Jul <- read.csv("201607-citibike-tripdata.csv")
+Aug <- read.csv("201608-citibike-tripdata.csv")
+Sep <- read.csv("201609-citibike-tripdata.csv")
+
+```
+
+```{r}
+#are dates/times in the same format ie January date/time looks different? does this need to be adjusted?
+
+
+citiBike_Jan_Sep <- as.data.frame(rbind(Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep))
+#final result should have 10262649 obs. of 15 variables
+#compilation takes about 15 minutes
+
+```
+
+
+```{}
+Goal 2: Identify patterns in the ride history data
+
+#Most popular stations to depart from and arrive at
+
+sort(table(citiBike_Jan_Sep$start.station.name), decreasing=T)[1:10]
+sort(table(citiBike_Jan_Sep$end.station.name), decreasing=T)[1:10]
+
+
+
+library(ggmap)
+qmap("New York", zoom= 13)+ geom_point(data= citiBike_Jan_Sep, aes(x=citiBike_Jan_Sep$start.station.longitude, y=citiBike_Jan_Sep$start.station.latitude, color= citiBike_Jan_Sep$start.station.id, alpha=.3)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(25,200, by= 10))
+
+#Frequency of the location of start station
+
+freq = aggregate(data.frame(count = citiBike_Jan_Sep$start.station.name), list(value1=citiBike_Jan_Sep$start.station.name, value2=citiBike_Jan_Sep$start.station.latitude, value3=citiBike_Jan_Sep$start.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freq, aes(x=freq$value3, y=freq$value2, color= freq$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+#Frequency of the location of end station
+
+freq2 = aggregate(data.frame(count = citiBike_Jan_Sep$end.station.name), list(value1=citiBike_Jan_Sep$end.station.name, value2=citiBike_Jan_Sep$end.station.latitude, value3=citiBike_Jan_Sep$end.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freq2, aes(x=freq2$value3, y=freq2$value2, color= freq2$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+#Frequency of the location of start station on weekdays
+
+weekdaystart = subset(citiBike_Jan_Sep, citiBike_Jan_Sep$startDays >=1 & citiBike_Jan_Sep$startDays <=5)
+freqweekdaystart = aggregate(data.frame(count = weekdaystart$start.station.name), list(value1=weekdaystart$start.station.name, value2=weekdaystart$start.station.latitude, value3=weekdaystart$start.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freqweekdaystart, aes(x=freqweekdaystart$value3, y=freqweekdaystart$value2, color= freqweekdaystart$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+#Frequency of the location of end station on weekdays
+
+weekdayend = subset(citiBike_Jan_Sep, citiBike_Jan_Sep$startDays >=1 & citiBike_Jan_Sep$startDays <=5)
+freqweekdayend = aggregate(data.frame(count = weekdayend$end.station.name), list(value1=weekdayend$end.station.name, value2=weekdayend$end.station.latitude, value3=weekdayend$end.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freqweekdayend, aes(x=freqweekdayend$value3, y=freqweekdayend$value2, color= freqweekdayend$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+
+```
+
+
+
+```{}
+Goal 3: Assymetric Traffic
+```
+
+
+
+```{}
+Goal 4: Impact of Weather
+
+Using daily weather data for the months of January to September 2016, we will attempt to better understand the impact of weather on the CitiBike system. 
+
+First, let's better visualize the weather data to understand what we're working with. There are a variety of recorded measurements in this weather data - precipitation, snow depth, snowfall, temperature max, temperature min, and average wind speed. 
+```
+
+```{r}
+library(ggplot2)
+library(scales)
+library(magrittr)
+library(dplyr)
+weather_data <- read.csv("weather_data.csv")
+weather_data$DATE <- as.Date(as.character(weather_data$DATE), "%Y%m%d")
+
+precip_plot <- ggplot(data=weather_data, aes(x=DATE, y=PRCP), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.3) + xlab("Date") + ylab("Precipitation") + ggtitle("Amount of precipitation from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+precip_plot
+
+snowD_plot <- ggplot(data=weather_data, aes(x=DATE, y=SNWD), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.3) + xlab("Date") + ylab("Snow Depth") + ggtitle("Snow depth from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+snowD_plot
+
+snowF_plot <- ggplot(data=weather_data, aes(x=DATE, y=SNOW), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.1) + xlab("Date") + ylab("Snowfall") + ggtitle("Amount of snowfall from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+snowF_plot
+
+temp_plot <- ggplot(data=weather_data, aes(x=DATE)) + geom_smooth(aes(y=TMAX, colour="max temperature"), span = 0.4) + geom_smooth(aes(y=TMIN, colour="min temperature"), span = 0.4) + scale_color_manual("", breaks=c("max temperature","min temperature"), values=c("red","blue"))+ xlab("Date") + ylab("Temperature") + ggtitle("Max Temperature vs. Min Temperature from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+temp_plot
+
+wind_plot <- ggplot(data=weather_data, aes(x=DATE, y=AWND), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.1) + xlab("Date") + ylab("Wind Speed") + ggtitle("Average wind speed from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+wind_plot
+
+```
+
+```{}
+A few initial observations based on this initial analysis: 
+1. It may be more useful to combine the min and max temperature data to calculate an average temperature value and use this average in our analysis.
+2. Wind speed data appears to have several unexplained outliers. While most data points are small positive numbers, there are some values of -9999. We're making the assumption that these are invalid data points. We will replace these data points with the mean average wind speed.
+
+A re-visualization of wind speed is below:
+```
+
+```{r}
+weather_data$AWND[weather_data$AWND < 0] = NA
+weather_data$AWND[is.na(weather_data$AWND)] = mean(weather_data$AWND, na.rm=TRUE)
+wind_plot <- ggplot(data=weather_data, aes(x=DATE, y=AWND), na.rm = TRUE) + geom_point() + geom_smooth(span = 0.1) + xlab("Date") + ylab("Wind Speed") + ggtitle("Average wind speed from January to September 2016") + scale_x_date(breaks = date_breaks("months"), labels = date_format("%b"))
+wind_plot
+```
+
+
+
