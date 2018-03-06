@@ -140,14 +140,66 @@ hour_plot
 
 ```{}
 Goal 2: Identify patterns in the ride history data
+
+```
+
+```{r}
+
+#Most popular stations to depart from and arrive at
+
+sort(table(citiBike_Jan_Sep$start.station.name), decreasing=T)[1:10]
+sort(table(citiBike_Jan_Sep$end.station.name), decreasing=T)[1:10]
+
+
+library(ggmap)
+qmap("New York", zoom= 13)+ geom_point(data= citiBike_Jan_Sep, aes(x=citiBike_Jan_Sep$start.station.longitude, y=citiBike_Jan_Sep$start.station.latitude, color= citiBike_Jan_Sep$start.station.id, alpha=.3)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(25,200, by= 10))
+
+#Frequency of the location of start station
+
+freq = aggregate(data.frame(count = citiBike_Jan_Sep$start.station.name), list(value1=citiBike_Jan_Sep$start.station.name, value2=citiBike_Jan_Sep$start.station.latitude, value3=citiBike_Jan_Sep$start.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freq, aes(x=freq$value3, y=freq$value2, color= freq$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+#Frequency of the location of end station
+
+freq2 = aggregate(data.frame(count = citiBike_Jan_Sep$end.station.name), list(value1=citiBike_Jan_Sep$end.station.name, value2=citiBike_Jan_Sep$end.station.latitude, value3=citiBike_Jan_Sep$end.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freq2, aes(x=freq2$value3, y=freq2$value2, color= freq2$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+#Frequency of the location of start station on weekdays
+
+weekdaystart = subset(citiBike_Jan_Sep, citiBike_Jan_Sep$startDays >=1 & citiBike_Jan_Sep$startDays <=5)
+freqweekdaystart = aggregate(data.frame(count = weekdaystart$start.station.name), list(value1=weekdaystart$start.station.name, value2=weekdaystart$start.station.latitude, value3=weekdaystart$start.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freqweekdaystart, aes(x=freqweekdaystart$value3, y=freqweekdaystart$value2, color= freqweekdaystart$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+#Frequency of the location of end station on weekdays
+
+weekdayend = subset(citiBike_Jan_Sep, citiBike_Jan_Sep$startDays >=1 & citiBike_Jan_Sep$startDays <=5)
+freqweekdayend = aggregate(data.frame(count = weekdayend$end.station.name), list(value1=weekdayend$end.station.name, value2=weekdayend$end.station.latitude, value3=weekdayend$end.station.longitude), length)
+qmap(location = "Webster Hall", zoom= 13) + geom_point(data= freqweekdayend, aes(x=freqweekdayend$value3, y=freqweekdayend$value2, color= freqweekdayend$count)) + scale_color_gradientn(colors = rainbow(4), breaks= seq(0,3000, by= 500))
+
+
 ```
 
 
 
-```{}
-Goal 3: Assymetric Traffic
-```
+```{r}
+#Goal 3: Assymetric Traffic
+# Install the jsonlite library
+library(jsonlite)
 
+data = fromJSON("http://api-core.citibikenyc.com/gbfs/en/station_status.json")
+data2 = fromJSON("http://api-core.citibikenyc.com/gbfs/en/station_information.json")
+
+# You'll only want to work with a certain part of this data.
+statusDF = data$data[1]$stations
+infoDF = data2$data$stations
+
+citiBike_Jan_Sep$startHours = as.POSIXlt(citiBike_Jan_Sep$starttime, format = "%m/%d/%Y %H:%M")$hour
+citiBike_Jan_Sep$stopHours = as.POSIXlt(citiBike_Jan_Sep$stoptime, format = "%m/%d/%Y %H:%M")$hour
+sort(table(subset(citiBike_Jan_Sep$start.station.name, citiBike_Jan_Sep$startHours >=9 & citiBike_Jan_Sep$startHours <=10))/2/274, decreasing=T)[1:10]
+sort(table(subset(citiBike_Jan_Sep$end.station.name, citiBike_Jan_Sep$stopHours >=9 & citiBike_Jan_Sep$stopHours <=10))/2/274, decreasing=T)[1:10]
+sort(table(subset(citiBike_Jan_Sep$start.station.name, citiBike_Jan_Sep$startHours >=17 & citiBike_Jan_Sep$startHours <=18))/2/274, decreasing=T)[1:10]
+sort(table(subset(citiBike_Jan_Sep$end.station.name, citiBike_Jan_Sep$stopHours >=17 & citiBike_Jan_Sep$stopHours <=18))/2/274, decreasing=T)[1:10]
+```
 
 
 ```{}
