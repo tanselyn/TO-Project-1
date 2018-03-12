@@ -31,6 +31,7 @@ library(gridExtra)
 library(lubridate)
 library(anytime)
 library(ggmap)
+#are dates/times in the same format ie January date/time looks different? does this need to be adjusted?
 
 
 citiBike_Jan_Sep <- as.data.frame(rbind(Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep))
@@ -47,28 +48,26 @@ citiBike_Jan_Sep <- rowwise(mutate(citiBike_Jan_Sep, distance =
 
 ```{r}
 #Gender Analysis
-
-
 citiBike_Jan_Sep$gender <- as.factor(citiBike_Jan_Sep$gender)
-by_gender <- subset(citiBike_Jan_Sep, gender == 1 | gender == 2)
+by_gender <- filter(citiBike_Jan_Sep, gender == 1 | gender == 2)
 by_gender <- group_by(by_gender, gender)
+gender_summary <- summarise(by_gender,
+  count = n(), avg_distance = mean(distance), med_distance = median(distance),
+  avg_duration = mean(tripduration), med_duration = median(tripduration))
 
 #distance
 gender_dist_plot<-ggplot(data=by_gender, aes(x=gender, y = distance, colour=gender)) +
   geom_jitter(alpha = 0.25) +
   labs(y="Distance, meters", title="Distance vs. Gender") + 
   scale_x_discrete(breaks = c(1, 2), label = c("Male", "Female")) + 
-  guides(colour=FALSE)+
-  ylim(0,25000)
+  guides(colour=FALSE)
 
 #duration
 gender_dur_plot<-ggplot(data=by_gender, aes(x=gender, y = tripduration, colour=gender)) +
   geom_jitter(alpha = 0.25) +
   labs(y="Duration, seconds", title="Trip Duration vs. Gender") + 
   scale_x_discrete(breaks = c(1, 2), label = c("Male", "Female")) + 
-  guides(colour=FALSE)+
-  ylim(0,35000)
-
+  guides(colour=FALSE)
 
 #median distance
 gender_dist_box <- ggplot(data=by_gender, aes(x=gender, y = distance)) +
@@ -93,6 +92,8 @@ grid.arrange(gender_dist_plot,gender_dur_plot,gender_dist_box,gender_dur_box,  n
 
 ```{r}
 #Count of rides by day of the week
+#Maybe get rid of fill
+#Need to reorder dates, probably go Sunday-Saturday week or Monday-Sunday week
 
 dates <- citiBike_Jan_Sep
 dates$starttime <- as.Date(dates$starttime, format = "%m/%d/%Y")
@@ -103,43 +104,61 @@ weekday_weekend_plot <- ggplot(data=dates, aes(x=day,fill=weekday_end)) +
   labs(x="Day", y="Number of Rides", 
        title = "Number of Rides per Day of the Week, January 2015 through September 2015") +
   guides(fill=guide_legend(title="Weekday or Weekend")) + 
+  #scale_x_date(date_labels = "%b-%d", date_breaks = "1 day", expand = c(0.00001,0)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  scale_fill_manual(values=c("goldenrod","skyblue")) + 
-  scale_x_discrete(limits=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))
+  scale_fill_manual(values=c("goldenrod","skyblue"))
 weekday_weekend_plot
 
 ```
 
-
-
-```{}
-There is a clear distinction between total volume of rides on weekdays and weekends, with all 5 weekdays seeing a greater ride volume than Saturdays and Sundays over the course of 9 months.
-```
-
-
-
 ```{r}
-#Time of Day, weekday and weekend
+#Time of Day
+
+#need to figure out issue of removing all January start times
 
 popularity <- citiBike_Jan_Sep
-popularity$startHours <- as.factor(as.POSIXlt(popularity$starttime, format = "%m/%d/%Y %H:%M")$hour)
-popularity$day <- as.Date(popularity$starttime, format = "%m/%d/%Y")
-popularity <- mutate(popularity, day=weekdays(day))
-popularity$weekday_end <- ifelse(popularity$day %in% c("Saturday", "Sunday"), "weekend", "weekday")
+popularity$starttime <- floor_date(
+  anytime(as.factor(as.POSIXct(
+      popularity$starttime, format="%m/%d/%Y %H:%M", tz="America/New_York")), tz="America/New_York"),"1 hour")
+
+#Testing Jan vs Feb
+
+JanPop <- JanTest
+JanPop$starttime <- floor_date(
+  anytime(as.factor(as.POSIXct(
+      JanPop$starttime, format="%m/%d/%Y %H:%M", tz="America/New_York")), tz="America/New_York"),"1 hour")
+
+
+FebPop <- FebTest
+FebPop$starttime <- floor_date(
+  anytime(as.factor(as.POSIXct(
+      FebPop$starttime, format="%m/%d/%Y %H:%M", tz="America/New_York")), tz="America/New_York"),"1 hour")
 
 
 
-hour_plot <- ggplot(data=popularity, aes(x=startHours)) + 
+
+
+
+
+
+
+#hourly categories (0-23)
+popularity$hour_group <- unclass(as.POSIXlt(popularity$starttime)$hour)
+popularity$hour_group <- as.factor(popularity$hour_group)
+
+pop_group <- group_by(popularity, start.station.name, start.station.longitude, start.station.latitude,
+                      hour_group)
+popularity_summary <- summarise(pop_group, count=n())
+
+hour_plot <- ggplot(data=popularity, aes(x=hour_group)) + 
   geom_bar() + 
-  labs(x="Hour", y="Number of Rides", title = "Number of Rides per Hour, January through September 2015") +
-  facet_wrap(~ weekday_end)
+  labs(x="Hour", y="Number of Rides", title = "Number of Rides per Hour, January through September 2015")
 hour_plot
 
+
+
 ```
 
-```{}
-When number of rides per hour are broken down into weekdays and weekends, it is much clearer to see the typical weekly demand. There are peaks during the commuting hours on weekdays (7am-9am and 4pm-7pm), while demand is much smoother across the day on weekends.
-```
 
 
 ```{}
